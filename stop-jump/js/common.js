@@ -55,44 +55,47 @@ function removeClass($el, className){
     return $el;
 }
 
-function getAllWindow(){
-    const arr = [window];
-    let ifr = document.getElementsByTagName('iframe');
-    let len = ifr.length;
-    for(var i = 0; i < len; i ++){
-        arr.push(ifr[i].contentWindow);
-    }
-    return arr;
-}
-
 
 function addListenerDebug(){
-    let str = getAllWindow.toString() + `
-        getAllWindow().forEach(win=>{
-            win._extendtion_debugFunc = ()=> {debugger;};
-            win.addEventListener('beforeunload', win._extendtion_debugFunc);
-        });
+    const str = `
+        window._extendtion_debugFunc = ()=> { debugger; };
+        window.addEventListener('beforeunload', window._extendtion_debugFunc);
     `;
     injectScript(str);
 }
 
 
 function removeListenerDebug(){
-    let str = getAllWindow.toString() + `
-        getAllWindow().forEach(win=>{
-            win.removeEventListener('beforeunload', win._extendtion_debugFunc);
-        });
+    const str = `
+        window.removeEventListener('beforeunload', window._extendtion_debugFunc);
     `;
     injectScript(str);
 }
 
-// 冻结 window.location
-// 注意, 一旦冻结就不能解冻了!!!
-function freeeLocation(){
-    let str = getAllWindow.toString() + `
-        getAllWindow().forEach(win=>{
-            Object.freeze(win.location);
-        });
+
+
+
+function addListenerStop(){
+    const str = `
+        window._extendtion_stopFunc = function(e){
+            // 这里 Chrome 浏览器禁止直接弹层, 所以必须触发用户点击操作
+            e.preventDefault();
+            e.returnValue = 'Stop the page redirection by Stop-Jump Plugin';
+        }
+        
+        window._extendtion_stopClickFunc = ()=>{
+            console.error('Already trigger stop-jump extention.');
+            window.addEventListener('beforeunload', window._extendtion_stopFunc);
+        }
+        document.addEventListener('click', window._extendtion_stopClickFunc);
+    `;
+    injectScript(str);
+}
+
+function removeListenerStop(){
+    const str = `
+        document.removeEventListener('click', window._extendtion_stopClickFunc);
+        window.removeEventListener('beforeunload', window._extendtion_stopFunc);
     `;
     injectScript(str);
 }
